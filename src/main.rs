@@ -60,6 +60,16 @@ impl Bills {
     fn remove(&mut self, name: &str) -> bool {
         self.inner.remove(name).is_some() // is false is removal failed
     }
+
+    fn update(&mut self, name: &str, amount: f64) -> bool {
+        match self.inner.get_mut(name) {
+            Some(bill) => {
+                bill.amount = amount;
+                true
+            }
+            None => false,
+        }
+    }
 }
 mod menu {
     use crate::{get_bill_amount, get_user_input, Bill, Bills};
@@ -98,6 +108,26 @@ mod menu {
             println!("bill removed");
         } else {
             println!("bill not found");
+        }
+    }
+    pub fn update_bill(bills: &mut Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill);
+        }
+
+        println!("Enter bill to be updated:");
+        let name = match get_user_input() {
+            Some(name) => name,
+            None => return,
+        };
+        let amount = match get_bill_amount() {
+            Some(amount) => amount,
+            None => return,
+        };
+        if bills.update(&name, amount) {
+            println!("Bill updataed");
+        } else {
+            println!("Bill not found");
         }
     }
 }
@@ -139,6 +169,7 @@ enum MainMenu {
     AddBill,
     ViewBill,
     RemoveBill,
+    UpdateBill,
 }
 
 impl MainMenu {
@@ -148,6 +179,7 @@ impl MainMenu {
             "1" => Some(MainMenu::AddBill),
             "2" => Some(MainMenu::ViewBill),
             "3" => Some(MainMenu::RemoveBill),
+            "4" => Some(MainMenu::UpdateBill),
             _ => None,
         }
     }
@@ -157,6 +189,7 @@ impl MainMenu {
         println!("1) Add Bill");
         println!("2) View Bill");
         println!("3) Remove Bill");
+        println!("4) Update Bill");
     }
 }
 
@@ -170,6 +203,7 @@ fn main() {
             Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
             Some(MainMenu::ViewBill) => menu::view_bills(&bills),
             Some(MainMenu::RemoveBill) => menu::remove_bill(&mut bills),
+            Some(MainMenu::UpdateBill) => menu::update_bill(&mut bills),
             None => return,
         }
         //Make a choice based on user input
