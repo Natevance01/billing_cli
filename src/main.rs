@@ -32,18 +32,59 @@
 
 use std::io;
 
-#[derive(Debug)]
-struct Bill {
+#[derive(Debug, Clone)]
+pub struct Bill {
     name: String,
-    amount: f32,
+    amount: f64,
 }
 
 impl Bill {
-    fn new(name: String, amount: f32) -> Self {
+    fn new(name: String, amount: f64) -> Self {
         Self { name, amount }
     }
 }
-/// Gets user input from stdin
+
+pub struct Bills {
+    inner: Vec<Bill>,
+}
+
+impl Bills {
+    fn new() -> Self {
+        Self { inner: vec![] }
+    }
+    fn add(&mut self, bill: Bill) {
+        self.inner.push(bill);
+    }
+
+    fn get_all(&self) -> Vec<&Bill> {
+        self.inner.iter().collect()
+    }
+}
+mod menu {
+    use crate::{get_bill_amount, get_user_input, Bill, Bills};
+
+    pub fn add_bill(bills: &mut Bills) {
+        println!("Bill name:");
+        let name = match get_user_input() {
+            Some(input) => input,
+            None => return,
+        };
+        let amount = match get_bill_amount() {
+            Some(amount) => amount,
+            None => return,
+        };
+        let bill = Bill { name, amount };
+        bills.add(bill);
+        println!("Bill added");
+    }
+    pub fn view_bills(bills: &Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill);
+        }
+    }
+}
+/// Gets user input from stdin:w
+///
 fn get_user_input() -> Option<String> {
     let mut buffer = String::new();
     while io::stdin().read_line(&mut buffer).is_err() {
@@ -55,6 +96,24 @@ fn get_user_input() -> Option<String> {
         None
     } else {
         Some(input)
+    }
+}
+
+fn get_bill_amount() -> Option<f64> {
+    println!("Amount:");
+    loop {
+        let input = match get_user_input() {
+            Some(input) => input,
+            None => return None,
+        };
+        if &input == "" {
+            return None;
+        }
+        let parsed_input: Result<f64, _> = input.parse();
+        match parsed_input {
+            Ok(amount) => return Some(amount),
+            Err(_) => println!("Please enter a number"),
+        };
     }
 }
 
@@ -81,13 +140,14 @@ impl MainMenu {
 }
 
 fn main() {
+    let mut bills = Bills::new();
     loop {
         //Display Menu
         MainMenu::show();
         let input = get_user_input().expect("no data entered");
         match MainMenu::from_str(input.as_str()) {
-            Some(MainMenu::AddBill) => (),
-            Some(MainMenu::ViewBill) => (),
+            Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
+            Some(MainMenu::ViewBill) => menu::view_bills(&bills),
             None => return,
         }
         //Make a choice based on user input
